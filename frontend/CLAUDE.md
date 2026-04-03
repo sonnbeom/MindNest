@@ -32,8 +32,10 @@ frontend/
 │   ├── page.tsx          # 홈 페이지
 │   ├── globals.css       # 전역 스타일 (Tailwind 진입점)
 │   └── (세션 라우트)/    # 향후 세션 페이지
-├── components/           # 재사용 UI 컴포넌트
-│   └── session/          # 세션 관련 컴포넌트 (TherapySession 등)
+├── components/
+│   ├── ui/               # 재사용 프리미티브 (Button, AnimatedGroup 등 shadcn 스타일)
+│   ├── sections/         # 페이지 섹션 컴포넌트 (HeroSection, BrandsGrid 등)
+│   └── session/          # 세션 플로우 전용 컴포넌트 (TherapySession 등)
 ├── lib/
 │   └── llm.js            # LLM 호출 전용 — 이 파일에서만 API 호출
 ├── data/
