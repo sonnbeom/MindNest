@@ -61,7 +61,29 @@ LLM을 호출하는 시점과 호출하지 않는 시점을 명확히 구분합�
 - 감정 이력 차트
 - 세션 데이터 저장/불러오기
 
-> LLM 호출 구현 위치(`lib/llm.js`) 및 컴포넌트 분리 규칙은 [frontend/CLAUDE.md](./frontend/CLAUDE.md) 참조.
+> LLM 호출은 백엔드(`mindnest-api`)에서 담당. 프롬프트 파일 위치: `mindnest-api/src/main/resources/prompts/distortion_analysis.md`
+
+---
+
+## 인지 왜곡 유형 (11개 — 심리학 공식 명칭)
+
+도메인 상세 설명: [mindnest-api/cognitive_distortion.md](./mindnest-api/cognitive_distortion.md)
+
+| # | 한국어 명칭 | 영문 |
+|---|---|---|
+| 1 | 전부 아니면 전무 | All or Nothing Thinking |
+| 2 | 지나친 일반화 | Overgeneralization |
+| 3 | 정신적 여과 | Mental Filtering |
+| 4 | 예언자적 말하기 | Fortune Telling |
+| 5 | 독심술 오류 | Mind Reading |
+| 6 | 극대화·극소화 | Magnification & Minimization |
+| 7 | 감정적 추리 | Emotional Reasoning |
+| 8 | 해야 한다는 생각 | Should Statements |
+| 9 | 낙인 찍기 | Labeling |
+| 10 | 자기 비난 | Self Blame |
+| 11 | 타인 비난 | Other Blame |
+
+> 이 명칭은 `DistortionType` enum, 프롬프트 파일, 프론트엔드 hints.json 모두에서 동일하게 사용된다. 임의 변경 금지.
 
 ---
 
