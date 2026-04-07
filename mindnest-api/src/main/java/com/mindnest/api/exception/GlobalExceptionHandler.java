@@ -29,6 +29,13 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.fail(ErrorCode.INVALID_INPUT, message));
     }
 
+    @ExceptionHandler(LlmResponseParseException.class)
+    public ResponseEntity<ApiResponse<Void>> handleLlmParse(LlmResponseParseException e) {
+        return ResponseEntity
+                .internalServerError()
+                .body(ApiResponse.fail(ErrorCode.LLM_PARSE_ERROR, e.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleUnexpected(Exception e) {
         return ResponseEntity

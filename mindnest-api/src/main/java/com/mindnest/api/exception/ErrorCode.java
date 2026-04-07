@@ -14,6 +14,7 @@ public enum ErrorCode {
 
     // 500 — 서버 오류
     LLM_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "AI 분석 중 오류가 발생했습니다"),
+    LLM_PARSE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "AI 응답 형식이 올바르지 않습니다"),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다");
 
     private final HttpStatus status;

@@ -35,3 +35,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Environment — 민감 정보, 절대 커밋 금지 ###
+.env
