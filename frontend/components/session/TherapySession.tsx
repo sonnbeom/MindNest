@@ -7,7 +7,7 @@ import DistortionStage from "@/components/session/stages/DistortionStage";
 import EvidenceStage from "@/components/session/stages/EvidenceStage";
 import IntakeStage from "@/components/session/stages/IntakeStage";
 import ReframeStage from "@/components/session/stages/ReframeStage";
-import { mockDistortionResult } from "@/data/mockLLMResponses";
+import { analyzeDistortions } from "@/lib/llm";
 import { useSessionState } from "@/hooks/useSessionState";
 import type { EvidenceEntry } from "@/types/session";
 import Link from "next/link";
@@ -17,19 +17,19 @@ export default function TherapySession() {
   const { session, dispatch } = useSessionState();
   const [isLoading, setIsLoading] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [reframeSubmitted, setReframeSubmitted] = useState(false);
 
-  // DISTORTION_ANALYSIS 진입 시 목업 분석 자동 실행
+  // DISTORTION_ANALYSIS 진입 시 백엔드 LLM 분석 호출
   useEffect(() => {
-    if (session.stage === "DISTORTION_ANALYSIS" && session.distortions.length === 0) {
-      setIsLoading(true);
-      // TODO: analyzeDistortions(session.intakeText) from lib/llm.ts 로 교체
-      const timer = setTimeout(() => {
-        dispatch({ type: "SET_DISTORTIONS", payload: mockDistortionResult });
-        setIsLoading(false);
-      }, 1800);
-      return () => clearTimeout(timer);
-    }
-  }, [session.stage, session.distortions.length, dispatch]);
+    if (session.stage !== "DISTORTION_ANALYSIS" || session.distortions.length > 0) return;
+    setIsLoading(true);
+    setError(null);
+    analyzeDistortions(session.sessionId, session.intakeSUD, session.intakeText)
+      .then((result) => dispatch({ type: "SET_DISTORTIONS", payload: result }))
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setIsLoading(false));
+  }, [session.stage, session.distortions.length, dispatch, session.sessionId, session.intakeSUD, session.intakeText]);
 
   // REFRAME 진입 시 entries 초기화
   useEffect(() => {
@@ -73,6 +73,9 @@ export default function TherapySession() {
     if (session.stage === "CLOSE") {
       setIsComplete(true);
       return;
+    }
+    if (session.stage === "REFRAME") {
+      setReframeSubmitted(false);
     }
     dispatch({ type: "NEXT_STAGE" });
   }
@@ -137,10 +140,15 @@ export default function TherapySession() {
           )}
 
           {session.stage === "DISTORTION_ANALYSIS" && (
-            <DistortionStage
-              distortions={session.distortions}
-              isLoading={isLoading}
-            />
+            <>
+              {error && (
+                <p className="text-sm text-red-500 text-center mb-4">{error}</p>
+              )}
+              <DistortionStage
+                distortions={session.distortions}
+                isLoading={isLoading}
+              />
+            </>
           )}
 
           {session.stage === "REFRAME" && (
@@ -150,6 +158,8 @@ export default function TherapySession() {
               onEntryChange={(index, value) =>
                 dispatch({ type: "SET_REFRAME_ENTRY", payload: { index, value } })
               }
+              submitted={reframeSubmitted}
+              onSubmit={() => setReframeSubmitted(true)}
             />
           )}
 

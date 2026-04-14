@@ -9,7 +9,10 @@ llm:
     version: 2023-06-01
     model: claude-haiku-4-5-20251001
     temperature: 0.3
-    max-tokens: 1000
+    max-tokens: 2000
 
 cors:
   allowed-origins: http://localhost:3000
+
+feedback:
+  file-path: /mnt/c/Project/MindNest/mindnest-api/feedback/distortion_analysis.jsonl

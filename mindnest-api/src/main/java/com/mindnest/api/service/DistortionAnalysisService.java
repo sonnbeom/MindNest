@@ -9,6 +9,7 @@ import com.mindnest.api.domain.session.SessionStageValidator;
 import com.mindnest.api.dto.request.DistortionAnalysisRequest;
 import com.mindnest.api.dto.response.DistortionAnalysisResponse;
 import com.mindnest.api.exception.LlmResponseParseException;
+import com.mindnest.api.feedback.FeedbackLogger;
 import com.mindnest.api.llm.LlmClient;
 import com.mindnest.api.llm.LlmMessage;
 import com.mindnest.api.llm.LlmRequest;
@@ -42,6 +43,7 @@ public class DistortionAnalysisService {
     private final DistortionAnalysisResultValidator validator;
     private final SessionStageValidator stageValidator;
     private final ObjectMapper objectMapper;
+    private final FeedbackLogger feedbackLogger;
 
     /** application.yaml의 llm.anthropic.model 값 (기본: claude-haiku) */
     @Value("${llm.anthropic.model:claude-haiku-4-5-20251001}")
@@ -71,6 +73,10 @@ public class DistortionAnalysisService {
 
         // 3. LLM 응답 파싱·검증 후 DTO 변환
         DistortionAnalysisResult result = parseAndValidate(llmResponse.content());
+
+        // 4. 피드백 데이터 저장 (실패해도 분석 결과 반환에는 영향 없음)
+        feedbackLogger.log(request.sessionId(), request.intakeSUD(), messages, llmResponse.content(), result);
+
         return toResponse(request.sessionId(), result);
     }
 
@@ -110,7 +116,7 @@ public class DistortionAnalysisService {
      */
     private DistortionAnalysisResponse toResponse(String sessionId, DistortionAnalysisResult result) {
         List<DistortionAnalysisResponse.DistortionDto> distortions = result.distortions().stream()
-                .map(d -> new DistortionAnalysisResponse.DistortionDto(d.name(), d.quote(), d.explanation()))
+                .map(d -> new DistortionAnalysisResponse.DistortionDto(d.name(), d.quote(), d.explanation(), d.reframeSuggestion()))
                 .toList();
 
         List<DistortionAnalysisResponse.PositiveDto> positives = result.positives().stream()

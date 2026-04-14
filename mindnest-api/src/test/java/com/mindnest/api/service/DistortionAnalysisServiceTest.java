@@ -7,6 +7,7 @@ import com.mindnest.api.dto.request.DistortionAnalysisRequest;
 import com.mindnest.api.dto.response.DistortionAnalysisResponse;
 import com.mindnest.api.exception.LlmResponseParseException;
 import com.mindnest.api.exception.MindNestException;
+import com.mindnest.api.feedback.FeedbackLogger;
 import com.mindnest.api.llm.LlmClient;
 import com.mindnest.api.llm.LlmResponse;
 import com.mindnest.api.llm.prompt.DistortionAnalysisPrompt;
@@ -30,6 +31,9 @@ class DistortionAnalysisServiceTest {
     @Mock
     private DistortionAnalysisPrompt prompt;
 
+    @Mock
+    private FeedbackLogger feedbackLogger;
+
     private DistortionAnalysisService service;
 
     @BeforeEach
@@ -39,7 +43,8 @@ class DistortionAnalysisServiceTest {
                 prompt,
                 new DistortionAnalysisResultValidator(),
                 new SessionStageValidator(),
-                new ObjectMapper()
+                new ObjectMapper(),
+                feedbackLogger
         );
     }
 
@@ -48,7 +53,7 @@ class DistortionAnalysisServiceTest {
         String validJson = """
                 {
                   "distortions": [
-                    { "name": "예언자적 말하기", "quote": "원문 인용", "explanation": "설명" }
+                    { "name": "예언자적 말하기", "quote": "원문 인용", "explanation": "설명", "reframeSuggestion": "재구성 제안" }
                   ],
                   "positives": [
                     { "value": "성취", "explanation": "설명" }
@@ -99,7 +104,7 @@ class DistortionAnalysisServiceTest {
         String invalidTypeJson = """
                 {
                   "distortions": [
-                    { "name": "존재하지않는유형", "quote": "원문 인용", "explanation": "설명" }
+                    { "name": "존재하지않는유형", "quote": "원문 인용", "explanation": "설명", "reframeSuggestion": "재구성 제안" }
                   ],
                   "positives": [
                     { "value": "성취", "explanation": "설명" }

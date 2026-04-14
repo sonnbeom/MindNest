@@ -8,12 +8,16 @@ interface ReframeStageProps {
   distortions: Distortion[];
   reframeEntries: string[];
   onEntryChange: (index: number, value: string) => void;
+  submitted: boolean;
+  onSubmit: () => void;
 }
 
 export default function ReframeStage({
   distortions,
   reframeEntries,
   onEntryChange,
+  submitted,
+  onSubmit,
 }: ReframeStageProps) {
   const [showExamples, setShowExamples] = useState(false);
 
@@ -79,8 +83,9 @@ export default function ReframeStage({
                 <textarea
                   value={reframeEntries[i] ?? ""}
                   onChange={(e) => onEntryChange(i, e.target.value)}
+                  disabled={submitted}
                   rows={3}
-                  className="w-full resize-none bg-transparent border-0 text-sm leading-relaxed text-gray-800 dark:text-gray-200 placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none"
+                  className="w-full resize-none bg-transparent border-0 text-sm leading-relaxed text-gray-800 dark:text-gray-200 placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none disabled:opacity-60"
                   placeholder="이 상황에서 발견할 수 있는 긍정적인 가치관이나 장점을 적어보세요."
                 />
                 <p className="text-right text-[10px] text-gray-300 dark:text-gray-600">
@@ -92,7 +97,41 @@ export default function ReframeStage({
         ))}
       </div>
 
-      {/* ③ 예시 토글 */}
+      {/* ③ LLM 제안 — 제출 후 표시 (overflow-hidden 그리드 밖) */}
+      {submitted && (
+        <div className="space-y-3">
+          {distortions.map((distortion, i) =>
+            distortion.reframeSuggestion ? (
+              <div
+                key={i}
+                className="rounded-2xl px-5 py-4 border border-purple-100 dark:border-purple-900/30"
+                style={{ background: "linear-gradient(135deg, #f5f3ff 0%, #fce7f3 100%)" }}
+              >
+                <p className="text-[10px] font-semibold text-purple-400 mb-1">
+                  💡 {distortion.name}에 대한 다른 시각
+                </p>
+                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                  {distortion.reframeSuggestion}
+                </p>
+              </div>
+            ) : null
+          )}
+        </div>
+      )}
+
+      {/* ④ 제출 버튼 */}
+      {!submitted && (
+        <button
+          onClick={onSubmit}
+          disabled={reframeEntries.every((e) => !e.trim())}
+          className="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity disabled:opacity-40"
+          style={{ background: "linear-gradient(135deg, #f9a8d4, #c084fc)" }}
+        >
+          긍정적 재구성 확인하기
+        </button>
+      )}
+
+      {/* ④ 예시 토글 */}
       <div className="bg-white/50 dark:bg-white/5 backdrop-blur-sm border border-white/80 dark:border-white/10 rounded-2xl p-5 space-y-3">
         <button
           onClick={() => setShowExamples((prev) => !prev)}
