@@ -23,7 +23,7 @@ public record DistortionAnalysisResponse(
      * domain의 CognitiveDistortion과 동일한 구조이지만
      * 직렬화 관심사 분리를 위해 별도로 정의한다.
      */
-    public record DistortionDto(String name, String quote, String explanation) {}
+    public record DistortionDto(String name, String quote, String explanation, String reframeSuggestion) {}
 
     /**
      * 긍정 가치 하나를 프론트엔드에 전달하는 DTO

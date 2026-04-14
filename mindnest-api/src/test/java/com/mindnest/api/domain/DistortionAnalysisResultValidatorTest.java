@@ -22,7 +22,7 @@ class DistortionAnalysisResultValidatorTest {
     @Test
     void should_passValidation_when_resultIsValid() {
         DistortionAnalysisResult result = new DistortionAnalysisResult(
-                List.of(new CognitiveDistortion("전부 아니면 전무", "원문 인용", "설명")),
+                List.of(new CognitiveDistortion("전부 아니면 전무", "원문 인용", "설명", "재구성 제안")),
                 List.of(new PositiveValue("성취", "설명"))
         );
 
@@ -32,7 +32,7 @@ class DistortionAnalysisResultValidatorTest {
     @Test
     void should_throwException_when_distortionNameIsUnknown() {
         DistortionAnalysisResult result = new DistortionAnalysisResult(
-                List.of(new CognitiveDistortion("존재하지않는유형", "원문 인용", "설명")),
+                List.of(new CognitiveDistortion("존재하지않는유형", "원문 인용", "설명", "재구성 제안")),
                 List.of(new PositiveValue("성취", "설명"))
         );
 
@@ -44,7 +44,7 @@ class DistortionAnalysisResultValidatorTest {
     @Test
     void should_throwException_when_quoteIsBlank() {
         DistortionAnalysisResult result = new DistortionAnalysisResult(
-                List.of(new CognitiveDistortion("전부 아니면 전무", "  ", "설명")),
+                List.of(new CognitiveDistortion("전부 아니면 전무", "  ", "설명", "재구성 제안")),
                 List.of(new PositiveValue("성취", "설명"))
         );
 
@@ -54,9 +54,21 @@ class DistortionAnalysisResultValidatorTest {
     }
 
     @Test
+    void should_throwException_when_reframeSuggestionIsBlank() {
+        DistortionAnalysisResult result = new DistortionAnalysisResult(
+                List.of(new CognitiveDistortion("전부 아니면 전무", "원문 인용", "설명", "  ")),
+                List.of(new PositiveValue("성취", "설명"))
+        );
+
+        assertThatThrownBy(() -> validator.validate(result))
+                .isInstanceOf(LlmResponseParseException.class)
+                .hasMessageContaining("reframeSuggestion이 비어있습니다");
+    }
+
+    @Test
     void should_throwException_when_positivesIsEmpty() {
         DistortionAnalysisResult result = new DistortionAnalysisResult(
-                List.of(new CognitiveDistortion("전부 아니면 전무", "원문 인용", "설명")),
+                List.of(new CognitiveDistortion("전부 아니면 전무", "원문 인용", "설명", "재구성 제안")),
                 List.of()
         );
 

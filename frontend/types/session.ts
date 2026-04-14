@@ -9,6 +9,7 @@ export interface Distortion {
   name: string;
   quote: string;
   explanation: string;
+  reframeSuggestion: string;
 }
 
 export interface Positive {
