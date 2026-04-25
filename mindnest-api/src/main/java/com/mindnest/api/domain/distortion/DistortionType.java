@@ -19,7 +19,7 @@ public enum DistortionType {
     MAGNIFICATION_MINIMIZATION("극대화·극소화", "부정적 면을 과장하고 긍정적 면을 축소 (또는 반대)"),
     EMOTIONAL_REASONING("감정적 추리", "지금 느끼는 감정이 곧 현실이라고 추론"),
     SHOULD_STATEMENTS("해야 한다는 생각", "자신·타인·세상에 대한 경직된 당위적 기준으로 판단"),
-    LABELING("낙인 찍기", "행동이 아닌 자신·타인 전체에 부정적 딱지를 붙임"),
+    LABELING("낙인 이론", "행동이 아닌 자신·타인 전체에 부정적 딱지를 붙임"),
     SELF_BLAME("자기 비난", "자신에게 책임 없는 일도 자신의 탓으로 귀인"),
     OTHER_BLAME("타인 비난", "갈등에서 자신의 기여는 보지 못하고 타인만 탓함");
 

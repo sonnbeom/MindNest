@@ -31,14 +31,14 @@ INTAKE → DISTORTION_ANALYSIS → REFRAME → CBT_DIALOGUE → CLOSE
 | 1 | INTAKE | SUD 슬라이더 + 자유 서술 입력 | ❌ |
 | 2 | DISTORTION_ANALYSIS | 인지 왜곡 분석 | ✅ 1회 |
 | 3 | REFRAME | 감정 이면 탐색, 긍정 가치 선택 | ❌ |
-| 4 | CBT_DIALOGUE | 소크라테스식 5턴 대화 | ✅ 턴당 1회 |
+| 4 | CBT_DIALOGUE | 증거 조사 — 인지 왜곡별 찬성·반대 증거 수집 + 균형잡힌 생각 도출 | ❌ |
 | 5 | CLOSE | 세션 후 SUD 기록 + 요약 | ❌ |
 
 **전환 조건**
 - 1→2: 텍스트 입력 완료 후 사용자가 "분석 시작" 버튼 클릭
 - 2→3: 사용자가 분석 확인 후 진행 선택
 - 3→4: 사용자가 긍정 가치 선택 또는 직접 입력 완료
-- 4→5: CBT 5턴 완료 또는 사용자가 수동 종료
+- 4→5: 인지 왜곡별 균형잡힌 생각(alternativeThought) 1개 이상 입력 완료
 - 5→끝: 새 세션 시작 버튼
 
 ---
@@ -52,7 +52,6 @@ LLM을 호출하는 시점과 호출하지 않는 시점을 명확히 구분합�
 | 시점 | 용도 | 출력 형식 |
 |------|------|----------|
 | 단계 2 진입 시 | 인지 왜곡 + 긍정 이면 분석 | JSON |
-| CBT 턴마다 | 소크라테스식 다음 질문 생성 | 텍스트 50자 이내 |
 
 **호출하지 않는 곳**
 - 슬라이더 입력 및 감정 지수 저장
@@ -60,6 +59,7 @@ LLM을 호출하는 시점과 호출하지 않는 시점을 명확히 구분합�
 - 세션 요약 카드 렌더링
 - 감정 이력 차트
 - 세션 데이터 저장/불러오기
+- 증거 조사 폼 입력 (EvidenceStage — 사전 정의 폼, LLM 없음)
 
 > LLM 호출은 백엔드(`mindnest-api`)에서 담당. 프롬프트 파일 위치: `mindnest-api/src/main/resources/prompts/distortion_analysis.md`
 
@@ -79,7 +79,7 @@ LLM을 호출하는 시점과 호출하지 않는 시점을 명확히 구분합�
 | 6 | 극대화·극소화 | Magnification & Minimization |
 | 7 | 감정적 추리 | Emotional Reasoning |
 | 8 | 해야 한다는 생각 | Should Statements |
-| 9 | 낙인 찍기 | Labeling |
+| 9 | 낙인 이론 | Labeling |
 | 10 | 자기 비난 | Self Blame |
 | 11 | 타인 비난 | Other Blame |
 
@@ -99,16 +99,15 @@ LLM을 호출하는 시점과 호출하지 않는 시점을 명확히 구분합�
   "closeSUD": null,
   "intakeText": "string",
   "distortions": [
-    { "name": "string", "quote": "string", "explanation": "string" }
+    { "name": "string", "quote": "string", "explanation": "string", "reframeSuggestion": "string" }
   ],
   "positives": [
     { "value": "string", "explanation": "string" }
   ],
-  "selectedPositives": ["string"],
-  "chatHistory": [
-    { "role": "user | assistant", "content": "string" }
+  "reframeEntries": ["string"],
+  "evidenceEntries": [
+    { "forEvidence": "string", "againstEvidence": "string", "alternativeThought": "string" }
   ],
-  "cbtTurn": 0,
   "createdAt": "ISO8601"
 }
 ```
@@ -121,7 +120,7 @@ LLM을 호출하는 시점과 호출하지 않는 시점을 명확히 구분합�
 ```
 힌트는 LLM이 생성하지 않습니다. 사전 정의된 데이터에서 왜곡 유형 기준으로 룩업합니다.
 
-**CBT 5턴** — `cbtTurn` 0→4 순서 고정, 건너뛰기 불가. 각 턴의 목적은 Product.md § 3 참조.
+**증거 조사** — `evidenceEntries`는 `distortions` 배열과 1:1 대응. 각 항목의 `alternativeThought`가 1개 이상 입력되면 4→5 전환 가능.
 
 **SUD** — `intakeSUD` / `closeSUD` 모두 0~10 정수만 허용.
 
@@ -139,7 +138,7 @@ LLM을 호출하는 시점과 호출하지 않는 시점을 명확히 구분합�
 🚫 사용자 상담 내용을 외부 서버로 전송 (DB 연동 전까지)
 🚫 LLM 응답을 검증 없이 그대로 UI에 노출
 🚫 contextObj 스키마 임의 변경
-🚫 CBT Turn 순서 변경 또는 건너뛰기
+🚫 4단계 증거 조사에서 LLM 호출
 ```
 
 ---

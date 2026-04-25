@@ -186,11 +186,13 @@ export default function TherapySession() {
           )}
         </div>
 
-        <SessionFooter
-          stage={session.stage}
-          canAdvance={canAdvance()}
-          onAdvance={handleAdvance}
-        />
+        {!(session.stage === "REFRAME" && !reframeSubmitted) && (
+          <SessionFooter
+            stage={session.stage}
+            canAdvance={canAdvance()}
+            onAdvance={handleAdvance}
+          />
+        )}
       </div>
     </div>
   );
