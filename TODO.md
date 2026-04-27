@@ -50,12 +50,41 @@
   - contextObj 스키마: chatHistory/cbtTurn 제거, reframeEntries/evidenceEntries 추가, distortions에 reframeSuggestion 추가
   - 절대 금지 사항: "4단계 증거 조사에서 LLM 호출" 금지 추가
 
-### 4단계 CBT_DIALOGUE (증거 조사) 완성
-- [ ] **`EvidenceStage.tsx` UI 점검**: 각 인지 왜곡별 3개 입력 필드(찬성 증거, 반대 증거, 균형잡힌 생각) 완성도 확인 및 UX 개선
-- [ ] **`CBTStage.tsx` 처리**: 소크라테스 채팅 방식 미사용 확정 → 파일 삭제 또는 보류 처리
-- [ ] **`mockLLMResponses.ts` 정리**: CBTStage에서만 사용하던 mock 데이터 미사용 시 삭제
-- [ ] **`useSessionState.ts` 정리**: `chatHistory`, `cbtTurn`, `ADD_CHAT_MESSAGE`, `ADVANCE_CBT_TURN`, `selectedPositives` 관련 액션/상태 — 미사용 확인 후 제거
-- [ ] **`types/session.ts` 정리**: `ChatMessage` 타입, `selectedPositives` 필드 미사용 시 제거
+---
+
+## 🔴 Todo
+
+### STEP 1 — 미사용 코드 제거 ✅ 완료
+
+- [x] `types/session.ts`: `ChatMessage`, `selectedPositives`, `chatHistory`, `cbtTurn`, `ADD_CHAT_MESSAGE`, `ADVANCE_CBT_TURN`, `SET_SELECTED_POSITIVES` 제거
+- [x] `hooks/useSessionState.ts`: 위 항목 reducer 케이스 및 초기값 제거
+- [x] `stages/CBTStage.tsx` 파일 삭제
+- [x] `data/mockLLMResponses.ts` 파일 삭제
+- [x] `DistortionStage.tsx` mock 주석 삭제
+- [x] TypeScript 빌드 오류 없음 확인
+
+### STEP 2 — LLM E2E 수동 검증
+> 백엔드 `LLM_API_KEY=<실제키>` 설정 후 양쪽 서버 동시 실행
+
+- [ ] 백엔드 실행 확인: `LLM_API_KEY` 환경변수 설정 → `./gradlew bootRun`
+- [ ] 프론트 실행 확인: `npm run dev` (`.env.local`의 `NEXT_PUBLIC_API_URL=http://localhost:8080`)
+- [ ] **전체 플로우 수동 테스트**: INTAKE → DISTORTION_ANALYSIS(LLM 호출) → REFRAME → CBT_DIALOGUE → CLOSE
+- [ ] DISTORTION_ANALYSIS 단계에서 LLM 응답이 올바른 JSON 반환하는지 확인
+- [ ] `feedback/distortion_analysis.jsonl`에 요청/응답 로그가 정상 기록되는지 확인
+- [ ] 에러 케이스 확인: 짧은 텍스트, 특수문자, 왜곡이 명확하지 않은 입력
+
+### STEP 3 — 프롬프트 품질 평가 및 개선
+> STEP 2 에서 수집한 피드백 로그 기반
+
+- [ ] `feedback/distortion_analysis.jsonl` 기록 분석 — 왜곡 유형 정확도, reframeSuggestion 품질 확인
+- [ ] `distortion_analysis.md` 내 TODO: `positiveValues.json` 제약 도입 여부 결정 (LLM 자유 추출 vs 통제 목록)
+- [ ] 프롬프트 개선 필요 시 `distortion_analysis.md` 수정 및 재테스트 (버전 업 기록)
+- [ ] 모델 변경 검토: 현재 `claude-haiku-4-5-20251001` → 품질 불만족 시 sonnet으로 변경 (`application.yaml`)
+
+### STEP 4 — 4단계 CBT_DIALOGUE (증거 조사) UX 완성
+- [ ] `EvidenceStage.tsx` 전체 플로우 수동 검증: 각 왜곡별 3개 입력 필드 정상 동작 확인
+- [ ] `canAdvance()` 조건 검증: `alternativeThought` 1개 이상 입력 시에만 다음 단계 버튼 활성화
+- [ ] 필드 플레이스홀더 텍스트 UX 개선 (사용자가 쉽게 이해할 수 있도록)
 
 ### CLOSE 단계 보완
 - [ ] CBT 대화 요약 추가: `CloseStage.tsx`에 `chatHistory`의 주요 AI 질문·사용자 답변 요약 섹션 추가
@@ -84,6 +113,13 @@
 
 ## 메모
 
-- **현재 브랜치**: `feature/2nd-track-ui-revise` — 3단계 REFRAME UI 개선 + DistortionType enum 정비 + 프롬프트 수정 작업 중
-- **다음 브랜치 제안**: `feature/cbt-dialogue` — 위 4단계 Todo 전체
+- **현재 브랜치**: `feature/2nd-track-ui-revise` — 커밋 후 머지
+- **다음 브랜치 제안**: `feature/llm-verify` — STEP 1~4 전체
 - **LLM 호출 정책 리마인더**: 힌트, 세션 요약 카드, SUD 저장에 LLM 호출 금지. 백엔드 호출은 반드시 `lib/llm.ts` 경유.
+- **현재 모델**: `claude-haiku-4-5-20251001` (application.yaml), 온도 0.3, max_tokens 2000
+- **피드백 로그 위치**: `mindnest-api/feedback/distortion_analysis.jsonl` (현재 16줄 누적)
+
+
+#Trouble shooting
+#TO-DO 
+llm 응답속도 7s -> 개선 필요

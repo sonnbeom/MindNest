@@ -10,6 +10,8 @@ llm:
     model: claude-haiku-4-5-20251001
     temperature: 0.3
     max-tokens: 1000
+    prompt:                                                                                                                                                          
+      distortion-analysis: prompts/distortion_analysis_v1.md  # 이 줄만 바꾸면 전환
 
 cors:
   allowed-origins: http://localhost:3000

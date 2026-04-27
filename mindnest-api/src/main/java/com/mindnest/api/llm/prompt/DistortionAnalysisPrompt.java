@@ -34,8 +34,7 @@ public class DistortionAnalysisPrompt implements PromptTemplate {
     private static final String USER_TEMPLATE_SECTION = "## USER TEMPLATE";
     private static final String FEW_SHOT_SECTION = "## FEW-SHOT EXAMPLE";
 
-    /** Spring이 classpath에서 프롬프트 파일을 주입 */
-    @Value("classpath:prompts/distortion_analysis.md")
+    @Value("classpath:${llm.anthropic.prompt.distortion-analysis}")
     private Resource promptResource;
 
     private String systemPrompt;    // SYSTEM 섹션 내용

@@ -22,8 +22,8 @@ class DistortionAnalysisResultValidatorTest {
     @Test
     void should_passValidation_when_resultIsValid() {
         DistortionAnalysisResult result = new DistortionAnalysisResult(
-                List.of(new CognitiveDistortion("전부 아니면 전무", "원문 인용", "설명", "재구성 제안")),
-                List.of(new PositiveValue("성취", "설명"))
+                List.of(new CognitiveDistortion("전부 아니면 전무", "원문 인용", "설명", "재구성 질문", "후속 질문")),
+                List.of(new PositiveValue("성취", "설명", "기억 유도 질문"))
         );
 
         assertThatNoException().isThrownBy(() -> validator.validate(result));
@@ -32,8 +32,8 @@ class DistortionAnalysisResultValidatorTest {
     @Test
     void should_throwException_when_distortionNameIsUnknown() {
         DistortionAnalysisResult result = new DistortionAnalysisResult(
-                List.of(new CognitiveDistortion("존재하지않는유형", "원문 인용", "설명", "재구성 제안")),
-                List.of(new PositiveValue("성취", "설명"))
+                List.of(new CognitiveDistortion("존재하지않는유형", "원문 인용", "설명", "재구성 질문", "후속 질문")),
+                List.of(new PositiveValue("성취", "설명", "기억 유도 질문"))
         );
 
         assertThatThrownBy(() -> validator.validate(result))
@@ -44,8 +44,8 @@ class DistortionAnalysisResultValidatorTest {
     @Test
     void should_throwException_when_quoteIsBlank() {
         DistortionAnalysisResult result = new DistortionAnalysisResult(
-                List.of(new CognitiveDistortion("전부 아니면 전무", "  ", "설명", "재구성 제안")),
-                List.of(new PositiveValue("성취", "설명"))
+                List.of(new CognitiveDistortion("전부 아니면 전무", "  ", "설명", "재구성 질문", "후속 질문")),
+                List.of(new PositiveValue("성취", "설명", "기억 유도 질문"))
         );
 
         assertThatThrownBy(() -> validator.validate(result))
@@ -54,21 +54,21 @@ class DistortionAnalysisResultValidatorTest {
     }
 
     @Test
-    void should_throwException_when_reframeSuggestionIsBlank() {
+    void should_throwException_when_reframeQuestionIsBlank() {
         DistortionAnalysisResult result = new DistortionAnalysisResult(
-                List.of(new CognitiveDistortion("전부 아니면 전무", "원문 인용", "설명", "  ")),
-                List.of(new PositiveValue("성취", "설명"))
+                List.of(new CognitiveDistortion("전부 아니면 전무", "원문 인용", "설명", "  ", "후속 질문")),
+                List.of(new PositiveValue("성취", "설명", "기억 유도 질문"))
         );
 
         assertThatThrownBy(() -> validator.validate(result))
                 .isInstanceOf(LlmResponseParseException.class)
-                .hasMessageContaining("reframeSuggestion이 비어있습니다");
+                .hasMessageContaining("reframeQuestion이 비어있습니다");
     }
 
     @Test
     void should_throwException_when_positivesIsEmpty() {
         DistortionAnalysisResult result = new DistortionAnalysisResult(
-                List.of(new CognitiveDistortion("전부 아니면 전무", "원문 인용", "설명", "재구성 제안")),
+                List.of(new CognitiveDistortion("전부 아니면 전무", "원문 인용", "설명", "재구성 질문", "후속 질문")),
                 List.of()
         );
 
@@ -82,7 +82,7 @@ class DistortionAnalysisResultValidatorTest {
         // 왜곡이 발견되지 않을 수도 있음 — 빈 배열 허용
         DistortionAnalysisResult result = new DistortionAnalysisResult(
                 List.of(),
-                List.of(new PositiveValue("성취", "설명"))
+                List.of(new PositiveValue("성취", "설명", "기억 유도 질문"))
         );
 
         assertThatNoException().isThrownBy(() -> validator.validate(result));

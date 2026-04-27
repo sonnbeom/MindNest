@@ -126,7 +126,7 @@ export default function ReframeStage({
                         작성 내용 없음
                       </p>
                     )}
-                    {distortion.reframeSuggestion && (
+                    {distortion.reframeQuestion && (
                       <div
                         className="rounded-xl px-3 py-2.5 border border-purple-100 dark:border-purple-900/30"
                         style={{ background: "linear-gradient(135deg, #f5f3ff 0%, #fce7f3 100%)" }}
@@ -135,8 +135,13 @@ export default function ReframeStage({
                           💡 다른 시각
                         </p>
                         <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
-                          {distortion.reframeSuggestion}
+                          {distortion.reframeQuestion}
                         </p>
+                        {distortion.followUpPrompt && (
+                          <p className="text-xs text-purple-500 dark:text-purple-400 mt-1.5 leading-relaxed">
+                            {distortion.followUpPrompt}
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>

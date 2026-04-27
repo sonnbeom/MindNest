@@ -6,6 +6,7 @@ import com.mindnest.api.llm.LlmClient;
 import com.mindnest.api.llm.LlmRequest;
 import com.mindnest.api.llm.LlmResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -14,20 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Anthropic Claude API를 호출하는 LlmClient 구현체 (현재 사용 중)
- *
- * LlmConfig에서 주입받은 RestClient를 사용해
- * https://api.anthropic.com/v1/messages 엔드포인트를 호출한다.
- *
- * OpenAI와 다른 점:
- * - system 메시지를 messages 배열이 아닌 별도 "system" 필드로 전달
- * - 헤더: x-api-key, anthropic-version (Authorization Bearer 아님)
- * - 응답 구조: choices[].message.content → content[].text
- *
- * 다른 프로바이더로 전환 시: 이 클래스의 @Component 제거,
- * 새 구현체에 @Component 추가하면 된다.
- */
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class AnthropicLlmClient implements LlmClient {
@@ -50,10 +38,9 @@ public class AnthropicLlmClient implements LlmClient {
                 .body(body)
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, (req, res) -> {
-                    throw new MindNestException(
-                            ErrorCode.LLM_ERROR,
-                            "Anthropic API 오류: HTTP " + res.getStatusCode()
-                    );
+                    String msg = "Anthropic API 호출 실패 [HTTP " + res.getStatusCode() + "]";
+                    log.error(msg);
+                    throw new MindNestException(ErrorCode.LLM_ERROR, msg);
                 })
                 .body(AnthropicChatResponse.class);
 
@@ -96,13 +83,17 @@ public class AnthropicLlmClient implements LlmClient {
      */
     private LlmResponse extractResponse(AnthropicChatResponse response) {
         if (response == null || response.content() == null || response.content().isEmpty()) {
+            log.error("Anthropic 응답 구조 이상: content 없음 (response={})", response);
             throw new MindNestException(ErrorCode.LLM_ERROR, "Anthropic 응답에 content가 없습니다");
         }
         String text = response.content().stream()
                 .filter(c -> "text".equals(c.type()))
                 .map(AnthropicChatResponse.Content::text)
                 .findFirst()
-                .orElseThrow(() -> new MindNestException(ErrorCode.LLM_ERROR, "Anthropic 응답에 text content가 없습니다"));
+                .orElseThrow(() -> {
+                    log.error("Anthropic 응답 구조 이상: text content 없음 (content={})", response.content());
+                    return new MindNestException(ErrorCode.LLM_ERROR, "Anthropic 응답에 text content가 없습니다");
+                });
         return new LlmResponse(text);
     }
 }

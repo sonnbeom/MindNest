@@ -116,11 +116,11 @@ public class DistortionAnalysisService {
      */
     private DistortionAnalysisResponse toResponse(String sessionId, DistortionAnalysisResult result) {
         List<DistortionAnalysisResponse.DistortionDto> distortions = result.distortions().stream()
-                .map(d -> new DistortionAnalysisResponse.DistortionDto(d.name(), d.quote(), d.explanation(), d.reframeSuggestion()))
+                .map(d -> new DistortionAnalysisResponse.DistortionDto(d.name(), d.quote(), d.explanation(), d.reframeQuestion(), d.followUpPrompt()))
                 .toList();
 
         List<DistortionAnalysisResponse.PositiveDto> positives = result.positives().stream()
-                .map(p -> new DistortionAnalysisResponse.PositiveDto(p.value(), p.explanation()))
+                .map(p -> new DistortionAnalysisResponse.PositiveDto(p.value(), p.explanation(), p.prompt()))
                 .toList();
 
         return new DistortionAnalysisResponse(sessionId, distortions, positives);

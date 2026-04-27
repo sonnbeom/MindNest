@@ -20,11 +20,8 @@ function createInitialSession(): SessionContext {
     intakeText: "",
     distortions: [],
     positives: [],
-    selectedPositives: [],
     reframeEntries: [],
     evidenceEntries: [],
-    chatHistory: [],
-    cbtTurn: 0,
     createdAt: new Date().toISOString(),
   };
 }
@@ -46,9 +43,6 @@ function sessionReducer(
         distortions: action.payload.distortions,
         positives: action.payload.positives,
       };
-
-    case "SET_SELECTED_POSITIVES":
-      return { ...state, selectedPositives: action.payload };
 
     case "INIT_REFRAME_ENTRIES": {
       const entries = Array(action.payload).fill("");
@@ -78,15 +72,6 @@ function sessionReducer(
       };
       return { ...state, evidenceEntries: updated };
     }
-
-    case "ADD_CHAT_MESSAGE":
-      return {
-        ...state,
-        chatHistory: [...state.chatHistory, action.payload],
-      };
-
-    case "ADVANCE_CBT_TURN":
-      return { ...state, cbtTurn: state.cbtTurn + 1 };
 
     case "SET_CLOSE_SUD":
       return { ...state, closeSUD: action.payload };
