@@ -41,9 +41,9 @@ public class DistortionAnalysisResultValidator {
                         "인지 왜곡의 quote가 비어있습니다: " + distortion.name()
                 );
             }
-            if (distortion.reframeSuggestion() == null || distortion.reframeSuggestion().isBlank()) {
+            if (distortion.reframeQuestion() == null || distortion.reframeQuestion().isBlank()) {
                 throw new LlmResponseParseException(
-                        "인지 왜곡의 reframeSuggestion이 비어있습니다: " + distortion.name()
+                        "인지 왜곡의 reframeQuestion이 비어있습니다: " + distortion.name()
                 );
             }
         }

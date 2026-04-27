@@ -1,6 +1,3 @@
-// TODO: 분석 결과는 lib/llm.ts의 analyzeDistortions()로 교체 예정.
-// 현재는 mockLLMResponses.ts의 목업 데이터를 사용합니다.
-
 import hintsData from "@/data/hints.json";
 import type { Distortion } from "@/types/session";
 

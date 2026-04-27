@@ -53,10 +53,10 @@ class DistortionAnalysisServiceTest {
         String validJson = """
                 {
                   "distortions": [
-                    { "name": "예언자적 말하기", "quote": "원문 인용", "explanation": "설명", "reframeSuggestion": "재구성 제안" }
+                    { "name": "예언자적 말하기", "quote": "원문 인용", "explanation": "설명", "reframeQuestion": "재구성 질문", "followUpPrompt": "후속 질문" }
                   ],
                   "positives": [
-                    { "value": "성취", "explanation": "설명" }
+                    { "value": "성취", "explanation": "설명", "prompt": "기억 유도 질문" }
                   ]
                 }
                 """;
@@ -104,10 +104,10 @@ class DistortionAnalysisServiceTest {
         String invalidTypeJson = """
                 {
                   "distortions": [
-                    { "name": "존재하지않는유형", "quote": "원문 인용", "explanation": "설명", "reframeSuggestion": "재구성 제안" }
+                    { "name": "존재하지않는유형", "quote": "원문 인용", "explanation": "설명", "reframeQuestion": "재구성 질문", "followUpPrompt": "후속 질문" }
                   ],
                   "positives": [
-                    { "value": "성취", "explanation": "설명" }
+                    { "value": "성취", "explanation": "설명", "prompt": "기억 유도 질문" }
                   ]
                 }
                 """;
