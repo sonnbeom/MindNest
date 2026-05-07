@@ -11,10 +11,12 @@ llm:
     temperature: 0.3
     max-tokens: 2000
     prompt:
-      distortion-analysis: prompts/distortion_analysis_v3.md
+      distortion-analysis: prompts/archive/archive/distortion_analysis_v3.md
+      intake-analysis: prompts/intake_analysis.md
+      reframe-generation: prompts/reframe_generation.md
 
 cors:
-  allowed-origins: http://localhost:3000
+  allowed-origins: http://localhost:3000,http://localhost:3001
 
 feedback:
   file-path: /mnt/c/Project/MindNest/mindnest-api/feedback/distortion_analysis.jsonl

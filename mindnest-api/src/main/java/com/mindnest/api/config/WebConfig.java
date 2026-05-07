@@ -17,7 +17,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class WebConfig implements WebMvcConfigurer {
 
     @Value("${cors.allowed-origins:http://localhost:3000}")
-    private String allowedOrigins;
+    private String[] allowedOrigins;
 
     /**
      * /api/** 경로에 대한 CORS 정책을 등록한다.

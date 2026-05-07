@@ -1,51 +1,43 @@
 export type Stage =
   | "INTAKE"
-  | "DISTORTION_ANALYSIS"
-  | "REFRAME"
-  | "CBT_DIALOGUE"
-  | "CLOSE";
+  | "THOUGHT_SUMMARY"
+  | "FACT_INTERPRETATION"
+  | "COUNTER_EVIDENCE"
+  | "CURRENT_ACTIONS"
+  | "REFRAME";
 
-export interface Distortion {
-  name: string;
-  quote: string;
-  explanation: string;
-  reframeQuestion: string;
-  followUpPrompt: string;
-}
-
-export interface Positive {
-  value: string;
-  explanation: string;
-  prompt: string;
-}
-
-export interface EvidenceEntry {
-  forEvidence: string;
-  againstEvidence: string;
-  alternativeThought: string;
+export interface Llm1Result {
+  thoughts: string[];
+  fact: string;
+  interpretation: string;
+  counter_hints: string[];
+  current_actions: string[];
 }
 
 export interface SessionContext {
   sessionId: string;
   stage: Stage;
-  intakeSUD: number;
-  closeSUD: number | null;
-  intakeText: string;
-  distortions: Distortion[];
-  positives: Positive[];
-  reframeEntries: string[];
-  evidenceEntries: EvidenceEntry[];
+  userInput: string;
+  llm1Result: Llm1Result | null;
+  selectedThoughtIndex: number;
+  selectedCounters: string[];
+  customCounter: string;
+  selectedActions: string[];
+  customAction: string;
+  reframedText: string;
+  isStreaming: boolean;
   createdAt: string;
 }
 
 export type SessionAction =
-  | { type: "SET_INTAKE_SUD"; payload: number }
-  | { type: "SET_INTAKE_TEXT"; payload: string }
-  | { type: "SET_DISTORTIONS"; payload: { distortions: Distortion[]; positives: Positive[] } }
-  | { type: "SET_REFRAME_ENTRY"; payload: { index: number; value: string } }
-  | { type: "INIT_REFRAME_ENTRIES"; payload: number }
-  | { type: "INIT_EVIDENCE_ENTRIES"; payload: number }
-  | { type: "SET_EVIDENCE_FIELD"; payload: { index: number; field: keyof EvidenceEntry; value: string } }
-  | { type: "SET_CLOSE_SUD"; payload: number }
+  | { type: "SET_USER_INPUT"; payload: string }
+  | { type: "SET_LLM1_RESULT"; payload: Llm1Result }
+  | { type: "SET_SELECTED_THOUGHT"; payload: number }
+  | { type: "TOGGLE_COUNTER"; payload: string }
+  | { type: "SET_CUSTOM_COUNTER"; payload: string }
+  | { type: "TOGGLE_ACTION"; payload: string }
+  | { type: "SET_CUSTOM_ACTION"; payload: string }
+  | { type: "SET_REFRAMED_TEXT"; payload: string }
+  | { type: "SET_STREAMING"; payload: boolean }
   | { type: "NEXT_STAGE" }
   | { type: "RESET" };

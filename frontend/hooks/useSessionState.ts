@@ -1,85 +1,82 @@
 "use client";
 
-import type { SessionAction, SessionContext, Stage } from "@/types/session";
 import { useReducer } from "react";
+import type { SessionContext, SessionAction, Stage } from "@/types/session";
 
 const STAGE_ORDER: Stage[] = [
   "INTAKE",
-  "DISTORTION_ANALYSIS",
+  "THOUGHT_SUMMARY",
+  "FACT_INTERPRETATION",
+  "COUNTER_EVIDENCE",
+  "CURRENT_ACTIONS",
   "REFRAME",
-  "CBT_DIALOGUE",
-  "CLOSE",
 ];
 
 function createInitialSession(): SessionContext {
   return {
     sessionId: crypto.randomUUID(),
     stage: "INTAKE",
-    intakeSUD: 5,
-    closeSUD: null,
-    intakeText: "",
-    distortions: [],
-    positives: [],
-    reframeEntries: [],
-    evidenceEntries: [],
+    userInput: "",
+    llm1Result: null,
+    selectedThoughtIndex: 0,
+    selectedCounters: [],
+    customCounter: "",
+    selectedActions: [],
+    customAction: "",
+    reframedText: "",
+    isStreaming: false,
     createdAt: new Date().toISOString(),
   };
 }
 
-function sessionReducer(
-  state: SessionContext,
-  action: SessionAction
-): SessionContext {
+function sessionReducer(state: SessionContext, action: SessionAction): SessionContext {
   switch (action.type) {
-    case "SET_INTAKE_SUD":
-      return { ...state, intakeSUD: action.payload };
+    case "SET_USER_INPUT":
+      return { ...state, userInput: action.payload };
 
-    case "SET_INTAKE_TEXT":
-      return { ...state, intakeText: action.payload };
+    case "SET_LLM1_RESULT":
+      return { ...state, llm1Result: action.payload };
 
-    case "SET_DISTORTIONS":
+    case "SET_SELECTED_THOUGHT":
+      return { ...state, selectedThoughtIndex: action.payload };
+
+    case "TOGGLE_COUNTER": {
+      const exists = state.selectedCounters.includes(action.payload);
       return {
         ...state,
-        distortions: action.payload.distortions,
-        positives: action.payload.positives,
+        selectedCounters: exists
+          ? state.selectedCounters.filter((c) => c !== action.payload)
+          : [...state.selectedCounters, action.payload],
       };
-
-    case "INIT_REFRAME_ENTRIES": {
-      const entries = Array(action.payload).fill("");
-      return { ...state, reframeEntries: entries };
     }
 
-    case "SET_REFRAME_ENTRY": {
-      const updated = [...state.reframeEntries];
-      updated[action.payload.index] = action.payload.value;
-      return { ...state, reframeEntries: updated };
-    }
+    case "SET_CUSTOM_COUNTER":
+      return { ...state, customCounter: action.payload };
 
-    case "INIT_EVIDENCE_ENTRIES": {
-      const entries = Array(action.payload).fill(null).map(() => ({
-        forEvidence: "",
-        againstEvidence: "",
-        alternativeThought: "",
-      }));
-      return { ...state, evidenceEntries: entries };
-    }
-
-    case "SET_EVIDENCE_FIELD": {
-      const updated = [...state.evidenceEntries];
-      updated[action.payload.index] = {
-        ...updated[action.payload.index],
-        [action.payload.field]: action.payload.value,
+    case "TOGGLE_ACTION": {
+      const exists = state.selectedActions.includes(action.payload);
+      return {
+        ...state,
+        selectedActions: exists
+          ? state.selectedActions.filter((a) => a !== action.payload)
+          : [...state.selectedActions, action.payload],
       };
-      return { ...state, evidenceEntries: updated };
     }
 
-    case "SET_CLOSE_SUD":
-      return { ...state, closeSUD: action.payload };
+    case "SET_CUSTOM_ACTION":
+      return { ...state, customAction: action.payload };
+
+    case "SET_REFRAMED_TEXT":
+      return { ...state, reframedText: action.payload };
+
+    case "SET_STREAMING":
+      return { ...state, isStreaming: action.payload };
 
     case "NEXT_STAGE": {
       const currentIndex = STAGE_ORDER.indexOf(state.stage);
-      if (currentIndex === STAGE_ORDER.length - 1) return state;
-      return { ...state, stage: STAGE_ORDER[currentIndex + 1] };
+      const nextStage = STAGE_ORDER[currentIndex + 1];
+      if (!nextStage) return state;
+      return { ...state, stage: nextStage };
     }
 
     case "RESET":

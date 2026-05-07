@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> 제품 목적·세션 플로우·MVP 범위·도메인 지식은 [Product.md](./Product.md) 참조.
+> 제품 목적·세션 플로우·MVP 범위·버전 로드맵은 [Product.md](./Product.md) 참조.
 
 ---
 
@@ -12,34 +12,35 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 | 디렉토리 | CLAUDE.md | 내용 |
 |---------|-----------|------|
-| `frontend/` | [frontend/CLAUDE.md](./frontend/CLAUDE.md) | Next.js 16 / React 19 / Tailwind CSS 4, 컴포넌트 설계, 안티 패턴 |
-| `mindnest-api/` | [mindnest-api/CLAUDE.md](./mindnest-api/CLAUDE.md) | Spring Boot 4 / Java 17, TDD, OOP 원칙, 패키지 구조 |
+| `frontend/` | [frontend/CLAUDE.md](./frontend/CLAUDE.md) | React / Vite / Tailwind CSS, 컴포넌트 설계, 안티 패턴 |
 
 ---
 
 ## 세션 상태 머신
 
-**5단계 고정 순서 — 프론트엔드·백엔드 모두 이 순서를 기준으로 구현합니다.**
+**6단계 고정 순서 — 이 순서를 기준으로 구현합니다.**
 
 ```
-INTAKE → DISTORTION_ANALYSIS → REFRAME → CBT_DIALOGUE → CLOSE
-  1단계        2단계               3단계       4단계         5단계
+INTAKE → THOUGHT_SUMMARY → FACT_INTERPRETATION → COUNTER_EVIDENCE → CURRENT_ACTIONS → REFRAME
+  1단계       2단계               3단계                 4단계               5단계          6단계
 ```
 
 | 단계 | 이름 | 설명 | LLM 호출 |
 |------|------|------|----------|
-| 1 | INTAKE | SUD 슬라이더 + 자유 서술 입력 | ❌ |
-| 2 | DISTORTION_ANALYSIS | 인지 왜곡 분석 | ✅ 1회 |
-| 3 | REFRAME | 감정 이면 탐색, 긍정 가치 선택 | ❌ |
-| 4 | CBT_DIALOGUE | 증거 조사 — 인지 왜곡별 찬성·반대 증거 수집 + 균형잡힌 생각 도출 | ❌ |
-| 5 | CLOSE | 세션 후 SUD 기록 + 요약 | ❌ |
+| 1 | INTAKE | 자유 서술 입력 | ❌ |
+| 2 | THOUGHT_SUMMARY | 핵심 생각 2개 추출 및 표시 | ✅ 호출 1 (스트리밍) |
+| 3 | FACT_INTERPRETATION | 사실 vs 해석 분리 표시 | ✅ 호출 1 결과 사용 |
+| 4 | COUNTER_EVIDENCE | 반례 체크박스 선택 | ❌ (호출 1 결과 사용) |
+| 5 | CURRENT_ACTIONS | 현재 행동 체크박스 선택 | ❌ (호출 1 결과 사용) |
+| 6 | REFRAME | 재구성 문장 표시 및 수정 | ✅ 호출 2 (스트리밍) |
 
 **전환 조건**
-- 1→2: 텍스트 입력 완료 후 사용자가 "분석 시작" 버튼 클릭
-- 2→3: 사용자가 분석 확인 후 진행 선택
-- 3→4: 사용자가 긍정 가치 선택 또는 직접 입력 완료
-- 4→5: 인지 왜곡별 균형잡힌 생각(alternativeThought) 1개 이상 입력 완료
-- 5→끝: 새 세션 시작 버튼
+- 1→2: 텍스트 입력 완료 후 제출 버튼 클릭 (LLM 호출 1 시작)
+- 2→3: 스트리밍 완료 후 사용자가 "다음" 클릭 (thought 선택 변경 가능)
+- 3→4: 사용자가 "다음" 클릭
+- 4→5: 사용자가 "다음" 클릭 (이 시점에 LLM 호출 2 백그라운드 시작)
+- 5→6: 사용자가 "다음" 클릭 (호출 2 완료 여부 확인 후 진입)
+- 6→끝: 저장 후 새 세션 시작 버튼
 
 ---
 
@@ -49,103 +50,103 @@ LLM을 호출하는 시점과 호출하지 않는 시점을 명확히 구분합�
 
 **호출하는 곳**
 
-| 시점 | 용도 | 출력 형식 |
-|------|------|----------|
-| 단계 2 진입 시 | 인지 왜곡 + 긍정 이면 분석 | JSON |
+| 시점 | 용도 | 출력 형식 | 방식 |
+|------|------|----------|------|
+| INTAKE 제출 직후 | 생각 추출 + 사실/해석 분리 + 선택지 생성 | JSON | 스트리밍 |
+| COUNTER_EVIDENCE "다음" 클릭 시 | 재구성 문장 생성 | 텍스트 | 스트리밍 (백그라운드) |
 
 **호출하지 않는 곳**
-- 슬라이더 입력 및 감정 지수 저장
-- 힌트 제공 (사전 정의 데이터셋에서 룩업)
-- 세션 요약 카드 렌더링
-- 감정 이력 차트
-- 세션 데이터 저장/불러오기
-- 증거 조사 폼 입력 (EvidenceStage — 사전 정의 폼, LLM 없음)
+- 체크박스 선택 및 상태 변경
+- 선택지 렌더링 (호출 1 결과를 그대로 사용)
+- 세션 저장 및 불러오기
+- 면책 고지 렌더링
 
-> LLM 호출은 백엔드(`mindnest-api`)에서 담당. 프롬프트 파일 위치: `mindnest-api/src/main/resources/prompts/distortion_analysis.md`
+**호출 1 출력 형식 (JSON)**
+```json
+{
+  "thoughts": ["핵심 생각 1", "핵심 생각 2"],
+  "fact": "객관적으로 일어난 사실",
+  "interpretation": "사실에 대한 주관적 해석",
+  "counter_hints": ["반례 힌트 1", "반례 힌트 2", "반례 힌트 3"],
+  "current_actions": ["현재 하고 있는 행동 1", "현재 하고 있는 행동 2"]
+}
+```
 
----
-
-## 인지 왜곡 유형 (11개 — 심리학 공식 명칭)
-
-도메인 상세 설명: [mindnest-api/cognitive_distortion.md](./mindnest-api/cognitive_distortion.md)
-
-| # | 한국어 명칭 | 영문 |
-|---|---|---|
-| 1 | 전부 아니면 전무 | All or Nothing Thinking |
-| 2 | 지나친 일반화 | Overgeneralization |
-| 3 | 정신적 여과 | Mental Filtering |
-| 4 | 예언자적 말하기 | Fortune Telling |
-| 5 | 독심술 오류 | Mind Reading |
-| 6 | 극대화·극소화 | Magnification & Minimization |
-| 7 | 감정적 추리 | Emotional Reasoning |
-| 8 | 해야 한다는 생각 | Should Statements |
-| 9 | 낙인 이론 | Labeling |
-| 10 | 자기 비난 | Self Blame |
-| 11 | 타인 비난 | Other Blame |
-
-> 이 명칭은 `DistortionType` enum, 프롬프트 파일, 프론트엔드 hints.json 모두에서 동일하게 사용된다. 임의 변경 금지.
+**호출 2 입력**
+```
+- 사실: {fact}
+- 선택한 반례: {선택된 counter_hints}
+- 현재 하고 있는 것: {선택된 current_actions}
+```
+> **프롬프트 파일 위치**: `mindnest-api/src/main/resources/prompts/intake_analysis.md`, `mindnest-api/src/main/resources/prompts/reframe_generation.md`
+> LLM 호출 코드 작성 전 반드시 해당 프롬프트 파일을 읽고 SYSTEM / USER TEMPLATE을 그대로 사용할 것.
+> 프롬프트 내용을 코드에 직접 하드코딩 금지 — 파일에서 읽어서 사용.
+> 아카이브: `src/prompts/archive/distortion_analysis.md` (V2 인지 왜곡 재도입 시 참고)
 
 ---
 
 ## 핵심 데이터 구조
 
-**세션 상태 객체 (contextObj) — 프론트엔드·백엔드 간 공유 계약. 구조 임의 변경 금지.**
+**세션 상태 객체 — 구조 임의 변경 금지.**
 
 ```json
 {
   "sessionId": "string",
-  "stage": "INTAKE | DISTORTION_ANALYSIS | REFRAME | CBT_DIALOGUE | CLOSE",
-  "intakeSUD": 0,
-  "closeSUD": null,
-  "intakeText": "string",
-  "distortions": [
-    { "name": "string", "quote": "string", "explanation": "string", "reframeSuggestion": "string" }
-  ],
-  "positives": [
-    { "value": "string", "explanation": "string" }
-  ],
-  "reframeEntries": ["string"],
-  "evidenceEntries": [
-    { "forEvidence": "string", "againstEvidence": "string", "alternativeThought": "string" }
-  ],
+  "stage": "INTAKE | THOUGHT_SUMMARY | FACT_INTERPRETATION | COUNTER_EVIDENCE | CURRENT_ACTIONS | REFRAME",
+  "userInput": "string",
+
+  "llm1Result": {
+    "thoughts": ["string", "string"],
+    "fact": "string",
+    "interpretation": "string",
+    "counter_hints": ["string", "string", "string"],
+    "current_actions": ["string", "string"]
+  },
+
+  "selectedThoughtIndex": 0,
+  "selectedCounters": ["string"],
+  "customCounter": "string",
+  "selectedActions": ["string"],
+  "customAction": "string",
+
+  "reframedText": "string",
+
+  "isStreaming": false,
+  "llm2Promise": null,
+
   "createdAt": "ISO8601"
 }
 ```
 
-**힌트 데이터 구조 (`frontend/data/hints.json`)**
-```json
-[
-  { "distortionType": "파국화", "hints": ["string", "string"] }
-]
-```
-힌트는 LLM이 생성하지 않습니다. 사전 정의된 데이터에서 왜곡 유형 기준으로 룩업합니다.
+---
 
-**증거 조사** — `evidenceEntries`는 `distortions` 배열과 1:1 대응. 각 항목의 `alternativeThought`가 1개 이상 입력되면 4→5 전환 가능.
+## 스트리밍 구현 원칙
 
-**SUD** — `intakeSUD` / `closeSUD` 모두 0~10 정수만 허용.
+- 호출 1은 JSON이 완성되는 시점에 파싱 후 단계별 순차 렌더링
+- 호출 2는 COUNTER_EVIDENCE "다음" 클릭 시 백그라운드에서 선행 시작
+- 텍스트 출력은 반드시 `StreamingText` 컴포넌트를 통해 글자 단위(40ms/글자) 타이핑 애니메이션 적용
+- 스트리밍 중 로딩 스피너 사용 금지. 커서 깜빡임(cursor blink)으로 대체
 
 ---
 
 ## 절대 금지 사항
 
-레이어·언어와 무관하게 프로젝트 전체에 적용됩니다.
-
 ```
 🚫 세션 단계 순서를 건너뛰거나 변경하는 코드
 🚫 LLM을 호출해선 안 되는 시점에 LLM 호출
-🚫 힌트를 LLM으로 생성하는 코드
+🚫 스트리밍 없이 LLM 응답을 한 번에 표시하는 코드
+🚫 사용자가 직접 처음부터 입력하게 강제하는 UI (AI가 채우고 사용자는 수정만)
 🚫 진단명, 처방, 약물 관련 텍스트를 UI에 표시
-🚫 사용자 상담 내용을 외부 서버로 전송 (DB 연동 전까지)
 🚫 LLM 응답을 검증 없이 그대로 UI에 노출
-🚫 contextObj 스키마 임의 변경
-🚫 4단계 증거 조사에서 LLM 호출
+🚫 세션 상태 객체 스키마 임의 변경
+🚫 사용자 상담 내용을 외부 서버로 전송 (DB 연동 전까지)
 ```
 
 ---
 
 ## 면책 고지 (UI 필수 표시)
 
-아래 문구는 앱 어딘가에 반드시 표시되어야 합니다. 삭제하거나 숨기는 코드 작성 금지.
+아래 문구는 SessionHeader에 반드시 표시되어야 합니다. 삭제하거나 숨기는 코드 작성 금지.
 
 ```
 본 앱은 전문 심리 치료를 대체하지 않습니다.
@@ -160,16 +161,16 @@ LLM을 호출하는 시점과 호출하지 않는 시점을 명확히 구분합�
 
 ```
 Phase 1  프롬프트 엔지니어링   현재 진행 중
-Phase 2  RAG                  frontend/lib/rag.js 예정 — 벡터 DB 검색 후 LLM 주입
-Phase 3  Fine-tuning          llm.js의 model 파라미터 교체로 대응 예정
-Phase 4  멀티 에이전트         frontend/lib/agents/ 디렉토리 예정
+Phase 2  RAG                  src/lib/rag.js 예정 — 벡터 DB 검색 후 LLM 주입
+Phase 3  Fine-tuning          모델 파라미터 교체로 대응 예정
+Phase 4  멀티 에이전트         src/lib/agents/ 디렉토리 예정
                                ├── analyzer.js
                                ├── counselor.js
-                               ├── validator.js   ← 응답 품질 검증
+                               ├── validator.js
                                └── summarizer.js
 ```
 
-LLM 호출부는 최대한 모듈화하세요. 컴포넌트·컨트롤러와 LLM 로직이 결합된 코드는 작성하지 마세요.
+LLM 호출부는 반드시 `useLLMStream` 훅으로 모듈화하세요. 컴포넌트와 LLM 로직이 결합된 코드는 작성하지 마세요.
 
 ---
 
@@ -178,10 +179,10 @@ LLM 호출부는 최대한 모듈화하세요. 컴포넌트·컨트롤러와 LLM
 결정 전까지 해당 부분 코드 작성을 보류하거나 TODO로 표시하세요.
 
 ```
-TODO: DB 솔루션 확정 (사용자 계정, 세션 영구 저장)
+TODO: DB 솔루션 확정 (세션 영구 저장 — 현재 로컬스토리지)
+TODO: 백엔드 프록시 구성 (API 키 서버사이드 이전 — 현재 클라이언트 노출)
 TODO: RAG 벡터 DB 선택 (Pinecone vs Chroma)
-TODO: Fine-tuning 데이터 수집 전략 확정
 TODO: 위기 감지 로직 설계 (특정 키워드 감지 시 전문기관 안내)
 TODO: 개인정보 처리방침 및 데이터 동의 UI
-TODO: API 키 서버사이드 이전 (현재 클라이언트 노출 상태)
+TODO: 사용자 계정 및 인증
 ```
