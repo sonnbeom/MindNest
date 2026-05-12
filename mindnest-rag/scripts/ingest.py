@@ -13,7 +13,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_text_splitters import MarkdownTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 from langchain_chroma import Chroma
 from app.config import settings
 
@@ -41,7 +41,7 @@ def ingest():
     splits = splitter.split_documents(docs)
     print(f"분할된 청크: {len(splits)}개")
 
-    embeddings = HuggingFaceEmbeddings(model_name=settings.embedding_model)
+    embeddings = FastEmbedEmbeddings(model_name=settings.embedding_model)
     vectorstore = Chroma.from_documents(
         documents=splits,
         embedding=embeddings,

@@ -15,6 +15,10 @@ llm:
       intake-analysis: prompts/intake_analysis.md
       reframe-generation: prompts/reframe_generation.md
 
+rag:
+  server:
+    url: http://localhost:8000
+
 cors:
   allowed-origins: http://localhost:3000,http://localhost:3001
 

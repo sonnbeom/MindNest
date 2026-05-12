@@ -25,6 +25,15 @@ def _build_context_section(context: str) -> str:
     return f"\n\n[관련 인지 왜곡 지식 — 아래 내용을 참고하여 분석하세요]\n{context}"
 
 
+def _strip_code_fences(text: str) -> str:
+    text = text.strip()
+    if text.startswith("```"):
+        text = text[text.index("\n") + 1:] if "\n" in text else text[3:]
+    if text.endswith("```"):
+        text = text[: text.rfind("```")]
+    return text.strip()
+
+
 def analyze_intake(intake_text: str) -> str:
     """
     호출 1: 사용자 입력 → RAG 검색 → intake 분석 JSON 반환.
@@ -48,7 +57,7 @@ def analyze_intake(intake_text: str) -> str:
         | StrOutputParser()
     )
 
-    return chain.invoke({"intake_text": intake_text})
+    return _strip_code_fences(chain.invoke({"intake_text": intake_text}))
 
 
 def generate_reframe(
