@@ -19,4 +19,16 @@ public interface LlmClient {
      * @return LLM이 생성한 텍스트 응답
      */
     LlmResponse complete(LlmRequest request);
+
+    /**
+     * LLM 응답을 스트리밍으로 outputStream에 직접 쓴다.
+     * 구현체가 오버라이드하지 않으면 배치 complete()로 폴백한다.
+     *
+     * @param request      LLM 요청
+     * @param outputStream 청크를 쓸 스트림 (HTTP 응답 스트림)
+     */
+    default void completeStreaming(LlmRequest request, java.io.OutputStream outputStream) throws java.io.IOException {
+        LlmResponse response = complete(request);
+        outputStream.write(response.content().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
 }

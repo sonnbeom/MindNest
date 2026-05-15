@@ -2,197 +2,243 @@
 
 import SessionFooter from "@/components/session/SessionFooter";
 import SessionHeader from "@/components/session/SessionHeader";
-import CloseStage from "@/components/session/stages/CloseStage";
-import DistortionStage from "@/components/session/stages/DistortionStage";
-import EvidenceStage from "@/components/session/stages/EvidenceStage";
+import CounterEvidenceStage from "@/components/session/stages/CounterEvidenceStage";
+import CurrentActionsStage from "@/components/session/stages/CurrentActionsStage";
+import FactInterpretationStage from "@/components/session/stages/FactInterpretationStage";
 import IntakeStage from "@/components/session/stages/IntakeStage";
 import ReframeStage from "@/components/session/stages/ReframeStage";
-import { analyzeDistortions } from "@/lib/llm";
+import ThoughtSummaryStage from "@/components/session/stages/ThoughtSummaryStage";
+import { analyzeIntake, generateReframe } from "@/lib/llm";
 import { useSessionState } from "@/hooks/useSessionState";
-import type { EvidenceEntry } from "@/types/session";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function TherapySession() {
   const { session, dispatch } = useSessionState();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [reframeSubmitted, setReframeSubmitted] = useState(false);
+  const [isComplete, setIsComplete] = useState(false);
+  const [isThoughtAnimating, setIsThoughtAnimating] = useState(false);
 
-  // DISTORTION_ANALYSIS 진입 시 백엔드 LLM 분석 호출
-  useEffect(() => {
-    if (session.stage !== "DISTORTION_ANALYSIS" || session.distortions.length > 0) return;
-    setIsLoading(true);
-    setError(null);
-    analyzeDistortions(session.sessionId, session.intakeSUD, session.intakeText)
-      .then((result) => dispatch({ type: "SET_DISTORTIONS", payload: result }))
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setIsLoading(false));
-  }, [session.stage, session.distortions.length, dispatch, session.sessionId, session.intakeSUD, session.intakeText]);
+  // LLM 2 스트리밍 텍스트 — 리듀서 외부에서 ref + state로 관리
+  const llm2PromiseRef = useRef<Promise<string> | null>(null);
+  const [reframeStreamText, setReframeStreamText] = useState("");
+  const [reframeStreamDone, setReframeStreamDone] = useState(false);
 
-  // REFRAME 진입 시 entries 초기화
+  // REFRAME 진입 시 LLM 2 결과 대기 및 표시
   useEffect(() => {
-    if (
-      session.stage === "REFRAME" &&
-      session.distortions.length > 0 &&
-      session.reframeEntries.length === 0
-    ) {
-      dispatch({ type: "INIT_REFRAME_ENTRIES", payload: session.distortions.length });
-    }
-  }, [session.stage, session.distortions.length, session.reframeEntries.length, dispatch]);
-
-  // CBT_DIALOGUE(증거 조사) 진입 시 entries 초기화
-  useEffect(() => {
-    if (
-      session.stage === "CBT_DIALOGUE" &&
-      session.distortions.length > 0 &&
-      session.evidenceEntries.length === 0
-    ) {
-      dispatch({ type: "INIT_EVIDENCE_ENTRIES", payload: session.distortions.length });
-    }
-  }, [session.stage, session.distortions.length, session.evidenceEntries.length, dispatch]);
+    if (session.stage !== "REFRAME" || !llm2PromiseRef.current) return;
+    dispatch({ type: "SET_STREAMING", payload: true });
+    llm2PromiseRef.current
+      .then((text) => {
+        dispatch({ type: "SET_REFRAMED_TEXT", payload: text });
+        setReframeStreamDone(true);
+        dispatch({ type: "SET_STREAMING", payload: false });
+      })
+      .catch((e: Error) => {
+        setError(e.message);
+        dispatch({ type: "SET_STREAMING", payload: false });
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session.stage]);
 
   function canAdvance(): boolean {
     switch (session.stage) {
       case "INTAKE":
-        return session.intakeText.trim().length > 0;
-      case "DISTORTION_ANALYSIS":
-        return session.distortions.length > 0 && !isLoading;
-      case "REFRAME":
-        return session.reframeEntries.some((e) => e.trim().length > 0);
-      case "CBT_DIALOGUE":
-        return session.evidenceEntries.some((e) => e.alternativeThought.trim().length > 0);
-      case "CLOSE":
+        return session.userInput.trim().length > 0 && !session.isStreaming;
+      case "THOUGHT_SUMMARY":
+        return session.llm1Result !== null && !isThoughtAnimating;
+      case "FACT_INTERPRETATION":
         return true;
+      case "COUNTER_EVIDENCE":
+        return session.selectedCounters.length > 0 || session.customCounter.trim().length > 0;
+      case "CURRENT_ACTIONS":
+        return session.selectedActions.length > 0 || session.customAction.trim().length > 0;
+      case "REFRAME":
+        return reframeStreamDone && session.reframedText.trim().length > 0;
     }
+  }
+
+  async function handleIntakeSubmit() {
+    dispatch({ type: "SET_STREAMING", payload: true });
+    setError(null);
+    try {
+      const result = await analyzeIntake(session.userInput, () => {});
+      dispatch({ type: "SET_LLM1_RESULT", payload: result });
+
+      // counter_hints: 처음 2개 자동 체크
+      result.counter_hints
+        .slice(0, Math.min(2, result.counter_hints.length))
+        .forEach((hint) => dispatch({ type: "TOGGLE_COUNTER", payload: hint }));
+
+      // current_actions: 전체 자동 체크
+      result.current_actions.forEach((action) =>
+        dispatch({ type: "TOGGLE_ACTION", payload: action })
+      );
+
+      dispatch({ type: "SET_STREAMING", payload: false });
+      setIsThoughtAnimating(true);
+      dispatch({ type: "NEXT_STAGE" });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "오류가 발생했습니다");
+      dispatch({ type: "SET_STREAMING", payload: false });
+    }
+  }
+
+  function handleCounterEvidenceNext() {
+    const llm1Result = session.llm1Result!;
+    const allCounters = [
+      ...session.selectedCounters,
+      ...(session.customCounter.trim() ? [session.customCounter.trim()] : []),
+    ];
+    const allActions = [
+      ...session.selectedActions,
+      ...(session.customAction.trim() ? [session.customAction.trim()] : []),
+    ];
+    const selectedThought = llm1Result.thoughts[session.selectedThoughtIndex];
+
+    setReframeStreamText("");
+    setReframeStreamDone(false);
+    llm2PromiseRef.current = generateReframe(
+      llm1Result.fact,
+      selectedThought,
+      allCounters,
+      allActions,
+      (chunk) => setReframeStreamText(chunk)
+    );
+
+    dispatch({ type: "NEXT_STAGE" });
   }
 
   function handleAdvance() {
     if (!canAdvance()) return;
-    if (session.stage === "CLOSE") {
-      setIsComplete(true);
+
+    if (session.stage === "INTAKE") {
+      handleIntakeSubmit();
+      return;
+    }
+    if (session.stage === "COUNTER_EVIDENCE") {
+      handleCounterEvidenceNext();
       return;
     }
     if (session.stage === "REFRAME") {
-      setReframeSubmitted(false);
+      setIsComplete(true);
+      return;
     }
     dispatch({ type: "NEXT_STAGE" });
   }
 
   if (isComplete) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-6">
-        <div
-          className="absolute inset-0 -z-10"
-          style={{
-            backgroundImage:
-              "linear-gradient(180deg, #ffffff 0%, #FFEDD5 25%, #FFDAB9 50%, #FFB6C1 70%, #E0BBE4 85%, #F3E5F5 100%)",
-          }}
-        />
+      <div
+        className="min-h-screen flex items-center justify-center px-6"
+        style={{ background: "var(--background)" }}
+      >
         <div className="text-center max-w-sm">
-          <p className="text-5xl mb-4">🎉</p>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-6"
+            style={{ background: "var(--primary-light)" }}
+          >
+            🌿
+          </div>
+          <h2
+            className="text-2xl font-bold mb-3"
+            style={{ color: "var(--text)", fontFamily: "var(--font-serif, serif)" }}
+          >
             오늘 수고하셨어요
           </h2>
-          <p className="text-gray-500 text-sm mb-8 leading-relaxed">
+          <p className="text-sm mb-8 leading-relaxed" style={{ color: "var(--muted)" }}>
             자신의 마음을 들여다보는 것, 쉽지 않은 일이에요.
             <br />
             오늘 그 용기를 내주셔서 감사해요.
           </p>
-          <div
-            className="inline-block rounded-[14px] p-0.5"
-            style={{ background: "linear-gradient(135deg, #f9a8d4, #c084fc, #a78bfa)" }}
+          <Link
+            href="/"
+            className="inline-flex items-center justify-center px-8 py-3 text-sm font-bold transition-all hover:scale-105"
+            style={{
+              background: "var(--primary)",
+              color: "var(--text)",
+              borderRadius: "var(--radius-button)",
+              boxShadow: "0 4px 20px rgba(245, 200, 0, 0.4)",
+            }}
           >
-            <Link
-              href="/"
-              className="block rounded-xl px-8 py-2.5 text-sm font-semibold text-gray-800 bg-white hover:bg-gray-50 transition-colors"
-            >
-              홈으로 돌아가기
-            </Link>
-          </div>
+            홈으로 돌아가기
+          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen relative">
-      <div
-        className="absolute inset-0 -z-10"
-        style={{
-          backgroundImage:
-            "linear-gradient(180deg, #ffffff 0%, #FFEDD5 25%, #FFDAB9 50%, #FFB6C1 70%, #E0BBE4 85%, #F3E5F5 100%)",
-        }}
-      />
-
+    <div className="min-h-screen" style={{ background: "var(--background)" }}>
       <div className="max-w-xl mx-auto px-4 py-8">
         <SessionHeader stage={session.stage} />
+
+        {error && (
+          <p className="text-sm text-red-500 text-center mb-4 rounded-xl p-3"
+            style={{ background: "#fff5f5", border: "1px solid #fed7d7" }}>
+            {error}
+          </p>
+        )}
 
         <div className="mb-4">
           {session.stage === "INTAKE" && (
             <IntakeStage
-              sud={session.intakeSUD}
-              text={session.intakeText}
-              onSUDChange={(v) => dispatch({ type: "SET_INTAKE_SUD", payload: v })}
-              onTextChange={(v) => dispatch({ type: "SET_INTAKE_TEXT", payload: v })}
+              text={session.userInput}
+              isStreaming={session.isStreaming}
+              onTextChange={(v) => dispatch({ type: "SET_USER_INPUT", payload: v })}
             />
           )}
 
-          {session.stage === "DISTORTION_ANALYSIS" && (
-            <>
-              {error && (
-                <p className="text-sm text-red-500 text-center mb-4">{error}</p>
-              )}
-              <DistortionStage
-                distortions={session.distortions}
-                isLoading={isLoading}
-              />
-            </>
+          {session.stage === "THOUGHT_SUMMARY" && session.llm1Result && (
+            <ThoughtSummaryStage
+              thoughts={session.llm1Result.thoughts}
+              selectedIndex={session.selectedThoughtIndex}
+              isAnimating={isThoughtAnimating}
+              onSelect={(i) => dispatch({ type: "SET_SELECTED_THOUGHT", payload: i })}
+            />
+          )}
+
+          {session.stage === "FACT_INTERPRETATION" && session.llm1Result && (
+            <FactInterpretationStage
+              fact={session.llm1Result.fact}
+              interpretation={session.llm1Result.interpretation}
+            />
+          )}
+
+          {session.stage === "COUNTER_EVIDENCE" && session.llm1Result && (
+            <CounterEvidenceStage
+              counterHints={session.llm1Result.counter_hints}
+              selectedCounters={session.selectedCounters}
+              customCounter={session.customCounter}
+              onToggle={(hint) => dispatch({ type: "TOGGLE_COUNTER", payload: hint })}
+              onCustomChange={(v) => dispatch({ type: "SET_CUSTOM_COUNTER", payload: v })}
+            />
+          )}
+
+          {session.stage === "CURRENT_ACTIONS" && session.llm1Result && (
+            <CurrentActionsStage
+              currentActions={session.llm1Result.current_actions}
+              selectedActions={session.selectedActions}
+              customAction={session.customAction}
+              onToggle={(action) => dispatch({ type: "TOGGLE_ACTION", payload: action })}
+              onCustomChange={(v) => dispatch({ type: "SET_CUSTOM_ACTION", payload: v })}
+            />
           )}
 
           {session.stage === "REFRAME" && (
             <ReframeStage
-              distortions={session.distortions}
-              reframeEntries={session.reframeEntries}
-              onEntryChange={(index, value) =>
-                dispatch({ type: "SET_REFRAME_ENTRY", payload: { index, value } })
-              }
-              submitted={reframeSubmitted}
-              onSubmit={() => setReframeSubmitted(true)}
-            />
-          )}
-
-          {session.stage === "CBT_DIALOGUE" && (
-            <EvidenceStage
-              distortions={session.distortions}
-              evidenceEntries={session.evidenceEntries}
-              onFieldChange={(index, field, value) =>
-                dispatch({
-                  type: "SET_EVIDENCE_FIELD",
-                  payload: { index, field: field as keyof EvidenceEntry, value },
-                })
-              }
-            />
-          )}
-
-          {session.stage === "CLOSE" && (
-            <CloseStage
-              session={session}
-              onCloseSUDChange={(v) =>
-                dispatch({ type: "SET_CLOSE_SUD", payload: v })
-              }
+              reframedText={reframeStreamDone ? session.reframedText : reframeStreamText}
+              isStreaming={!reframeStreamDone}
+              onTextChange={(v) => dispatch({ type: "SET_REFRAMED_TEXT", payload: v })}
             />
           )}
         </div>
 
-        {!(session.stage === "REFRAME" && !reframeSubmitted) && (
-          <SessionFooter
-            stage={session.stage}
-            canAdvance={canAdvance()}
-            onAdvance={handleAdvance}
-          />
-        )}
+        <SessionFooter
+          stage={session.stage}
+          canAdvance={canAdvance()}
+          onAdvance={handleAdvance}
+        />
       </div>
     </div>
   );
