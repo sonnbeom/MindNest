@@ -13,6 +13,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | 디렉토리 | CLAUDE.md | 내용 |
 |---------|-----------|------|
 | `frontend/` | [frontend/CLAUDE.md](./frontend/CLAUDE.md) | React / Vite / Tailwind CSS, 컴포넌트 설계, 안티 패턴 |
+| `mindnest-api/` | [mindnest-api/CLAUDE.md](./mindnest-api/CLAUDE.md) | Spring Boot 4, TDD, 패키지 구조, OOP 원칙 |
+| `mindnest-rag/` | 없음 | Python FastAPI + LangChain + ChromaDB RAG 서버. 상세: [RAG_PLAN.md](./RAG_PLAN.md) |
 
 ---
 
@@ -157,11 +159,10 @@ LLM을 호출하는 시점과 호출하지 않는 시점을 명확히 구분합�
 
 ## AI 아키텍처 로드맵
 
-현재는 Phase 1입니다. 향후 단계가 들어올 자리를 미리 고려해서 코드를 짜세요.
-
 ```
-Phase 1  프롬프트 엔지니어링   현재 진행 중
-Phase 2  RAG                  src/lib/rag.js 예정 — 벡터 DB 검색 후 LLM 주입
+Phase 1  프롬프트 엔지니어링   ✅ 완료
+Phase 2  RAG                  🔄 진행 중 — mindnest-rag/ (FastAPI + LangChain + ChromaDB)
+                               React → Spring Boot → FastAPI(RAG) → Claude API
 Phase 3  Fine-tuning          모델 파라미터 교체로 대응 예정
 Phase 4  멀티 에이전트         src/lib/agents/ 디렉토리 예정
                                ├── analyzer.js
@@ -169,6 +170,9 @@ Phase 4  멀티 에이전트         src/lib/agents/ 디렉토리 예정
                                ├── validator.js
                                └── summarizer.js
 ```
+
+**Phase 2 현재 상태**: 기본 RAG 파이프라인 구현 완료. 검색 품질 개선 리팩토링 진행 중.
+상세 계획: [RAG_PLAN.md](./RAG_PLAN.md)
 
 LLM 호출부는 반드시 `useLLMStream` 훅으로 모듈화하세요. 컴포넌트와 LLM 로직이 결합된 코드는 작성하지 마세요.
 
@@ -180,9 +184,10 @@ LLM 호출부는 반드시 `useLLMStream` 훅으로 모듈화하세요. 컴포�
 
 ```
 TODO: DB 솔루션 확정 (세션 영구 저장 — 현재 로컬스토리지)
-TODO: 백엔드 프록시 구성 (API 키 서버사이드 이전 — 현재 클라이언트 노출)
-TODO: RAG 벡터 DB 선택 (Pinecone vs Chroma)
 TODO: 위기 감지 로직 설계 (특정 키워드 감지 시 전문기관 안내)
 TODO: 개인정보 처리방침 및 데이터 동의 UI
 TODO: 사용자 계정 및 인증
 ```
+
+> ~~RAG 벡터 DB 선택~~ → ChromaDB로 결정 완료  
+> ~~백엔드 프록시 구성~~ → Spring Boot가 API 키 관리 (mindnest-api/.env)

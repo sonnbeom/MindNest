@@ -75,7 +75,10 @@ CBT(인지행동치료) 기반 셀프 심리 상담 웹 앱.
 
 **목적**: 핵심 생각 추출 + 사실/해석 분리 + 체크박스 선택지 생성을 한 번에
 
-**모델**: `claude-sonnet-4-20250514`
+**모델**: `claude-haiku-4-5-20251001` (현재 운영 중)
+
+**호출 경로**: React → Spring Boot(`/api/v1/analysis/intake`) → FastAPI RAG 서버(`/rag/analyze`) → Claude API  
+RAG 서버에서 관련 인지 왜곡 지식 베이스 검색 후 프롬프트에 주입하여 호출
 
 **출력 형식 (JSON)**:
 ```json
@@ -99,7 +102,10 @@ CBT(인지행동치료) 기반 셀프 심리 상담 웹 앱.
 
 **목적**: 선택된 반례 + 현재 행동을 바탕으로 재구성 문장 생성
 
-**모델**: `claude-sonnet-4-20250514`
+**모델**: `claude-haiku-4-5-20251001` (현재 운영 중)
+
+**호출 경로**: Spring Boot(`/api/v1/reframe/generate`) → FastAPI RAG 서버(`/rag/reframe`) → Claude API  
+재구성 문장 스타일 예시를 RAG로 검색하여 주입
 
 **입력**:
 ```
@@ -240,10 +246,14 @@ LLM 호출은 Spring Boot 백엔드(`mindnest-api`)가 담당합니다. API 키�
 
 ```
 # mindnest-api/.env
-ANTHROPIC_API_KEY=your_api_key_here
+LLM_API_KEY=your_anthropic_api_key_here
+
+# mindnest-rag/.env
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
 ```
 
-> ⚠️ API 키를 프론트엔드 코드나 클라이언트 번들에 포함하지 마세요.
+> ⚠️ API 키를 프론트엔드 코드나 클라이언트 번들에 포함하지 마세요.  
+> Spring Boot는 `LLM_API_KEY`, FastAPI RAG 서버는 `ANTHROPIC_API_KEY` 환경변수명을 각각 사용합니다.
 
 ---
 

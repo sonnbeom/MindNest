@@ -33,32 +33,48 @@ Claude API (LLM)
 
 ## 구현 순서
 
-### Phase 1 — FastAPI RAG 서버 기본 구조
-- [ ] FastAPI 프로젝트 세팅 (`mindnest-rag/`)
-- [ ] LangChain 설치 및 기본 RAG 파이프라인 구성
-- [ ] VectorDB 선택 및 연결 (ChromaDB 우선)
-- [ ] 임베딩 모델 선택 (한국어 지원 고려)
+### Phase 1 — FastAPI RAG 서버 기본 구조 ✅ 완료
+- [x] FastAPI 프로젝트 세팅 (`mindnest-rag/`)
+- [x] LangChain 설치 및 기본 RAG 파이프라인 구성
+- [x] VectorDB 선택 및 연결 (ChromaDB)
+- [x] 임베딩 모델 선택 — `paraphrase-multilingual-MiniLM-L12-v2` (FastEmbed, 한국어 지원)
 
-### Phase 2 — 지식 베이스 데이터 제작
-- [ ] 인지 왜곡 × 상황 조합 청크 제작 (기존 `cognitive_distortion.md` 기반)
-- [ ] Synthetic 재구성 예시 데이터 생성 (LLM으로 합성)
-- [ ] 청크 VectorDB 적재
+### Phase 2 — 지식 베이스 데이터 제작 ✅ 완료
+- [x] 인지 왜곡 × 상황 조합 청크 16개 제작 (`data/chunks/*.md`)
+- [x] Synthetic 재구성 예시 데이터 생성 (`reframe_examples.md`)
+- [x] ChromaDB 적재 완료 (`chroma_db/chroma.sqlite3` 존재)
 
-### Phase 3 — Spring Boot 연동
-- [ ] Spring Boot → FastAPI HTTP 호출 구현
-- [ ] intake_analysis 호출 시 RAG 검색 결과 주입
-- [ ] reframe_generation 호출 시 RAG 검색 결과 주입
+### Phase 3 — Spring Boot 연동 ✅ 완료
+- [x] Spring Boot → FastAPI HTTP 호출 구현 (`RagHttpClient.java`)
+- [x] intake_analysis 호출 시 RAG 검색 결과 주입
+- [x] reframe_generation 호출 시 RAG 검색 결과 주입
+- [x] `RagConfig.java` 버그 수정 — `RestClient.Builder` 자동 주입 오류 → `RestClient.builder()` 직접 생성으로 변경
 
-### Phase 4 — Before / After 비교
-- [ ] 대표 입력 10개 선정 (직장/인간관계/자존감 각 상황)
-- [ ] Before: 기존 Spring Boot → Claude 직접 호출 결과 저장
-- [ ] After: Spring Boot → FastAPI(RAG) → Claude 결과 저장
-- [ ] `mindnest-rag/docs/before_after_examples.md`에 비교 기록
+### Phase 4 — Before / After 비교 ✅ 완료
+- [x] 대표 입력 10개 선정 (직장/인간관계/자존감/가족 상황)
+- [x] Before: Claude 직접 호출 (RAG 없음)
+- [x] After: FastAPI(RAG) → Claude 결과
+- [x] `mindnest-rag/docs/before_after_examples.md` 기록 완료
+- [x] 비교 스크립트 작성 (`scripts/compare_before_after.py`)
+
+**Phase 4 결과 요약:**
+- RAG 효과가 미미함 — counter_hints 표현 스타일이 달라지는 정도
+- 원인 1: Claude가 CBT를 이미 학습하고 있어 RAG 없이도 기본 답변 생성 가능
+- 원인 2: 청크당 표현 예시 4~6개로 임베딩 커버리지 부족
+- 원인 3: 단순 1회 유사도 검색 — 구어체 입력에 취약
+- → 리팩토링 필요 (상세 전략: `mindnest-rag/docs/refactoring_strategy.md`)
 
 ### Phase 5 — 면접 소재 정리
 - [ ] 청킹 전략 선택 근거 문서화
 - [ ] VectorDB 선택 비교 정리
 - [ ] Before/After 예시 중 임팩트 큰 3개 추려서 발표용 준비
+- [ ] 리팩토링 적용 후 개선 전/후 비교 추가
+
+### Phase 6 — 검색 품질 리팩토링 (신규)
+- [ ] Step 1: 청크 표현 예시 20개로 확장 + ingest 재실행
+- [ ] Step 2: `MultiQueryRetriever` 적용 (한국어 커스텀 프롬프트 포함)
+- [ ] Step 3: Before/After 재측정 → `before_after_examples.md` 업데이트
+- [ ] Step 4 (선택): Hybrid Search — BM25(kiwipiepy) + Vector, EnsembleRetriever
 
 ---
 

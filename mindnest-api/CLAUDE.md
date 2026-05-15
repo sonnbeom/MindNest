@@ -12,6 +12,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working in the 
 - `javax.*` 패키지 완전 제거 → 반드시 `jakarta.*` 사용
 - Spring MVC (`spring-boot-starter-webmvc`) 기반, WebFlux 아님
 - Java 17 최소 요구
+- `spring-boot-starter-webmvc`는 `RestClient.Builder` 빈을 자동 등록하지 않음  
+  → `@Bean` 메서드에서 `RestClient.Builder builder` 파라미터 주입 불가  
+  → 반드시 `RestClient.builder().baseUrl(...).build()` 정적 메서드로 직접 생성할 것
 
 ---
 

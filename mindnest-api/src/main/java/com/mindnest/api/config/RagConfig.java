@@ -12,8 +12,8 @@ public class RagConfig {
     private String ragServerUrl;
 
     @Bean
-    public RestClient ragRestClient(RestClient.Builder builder) {
-        return builder
+    public RestClient ragRestClient() {
+        return RestClient.builder()
                 .baseUrl(ragServerUrl)
                 .build();
     }
