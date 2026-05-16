@@ -71,9 +71,9 @@ Claude API (LLM)
 - [ ] 리팩토링 적용 후 개선 전/후 비교 추가
 
 ### Phase 6 — 검색 품질 리팩토링 (신규)
-- [ ] Step 1: 청크 표현 예시 20개로 확장 + ingest 재실행
-- [ ] Step 2: `MultiQueryRetriever` 적용 (한국어 커스텀 프롬프트 포함)
-- [ ] Step 3: Before/After 재측정 → `before_after_examples.md` 업데이트
+- [x] Step 1: 청크 표현 예시 20개로 확장 + ingest 재실행
+- [x] Step 2: `MultiQueryRetriever` 적용 (한국어 커스텀 프롬프트 포함, claude-haiku 사용, 폴백 포함)
+- [x] Step 3: Before/After 재측정 → `before_after_examples.md` 업데이트 완료 (2026-05-16)
 - [ ] Step 4 (선택): Hybrid Search — BM25(kiwipiepy) + Vector, EnsembleRetriever
 
 ---
@@ -241,10 +241,10 @@ Claude API (LLM)
 
 최종 리팩토링 시 아래 순서로 진행한다.
 
-- [ ] **전략 1**: 각 청크 표현 예시 LLM으로 확장 → ingest.py 재실행
-- [ ] **전략 2**: `app/services/retriever.py`에 Query Expansion 추가
-- [ ] Before/After 비교 재실행 — 전략 적용 전/후 검색 결과 품질 비교
-- [ ] `docs/before_after_examples.md` 업데이트
+- [x] **전략 1**: 각 청크 표현 예시 LLM으로 확장 → ingest.py 재실행
+- [x] **전략 2**: `app/services/retriever.py`에 MultiQueryRetriever 적용 (한국어 프롬프트 + 폴백)
+- [x] Before/After 비교 재실행 — 전략 적용 전/후 검색 결과 품질 비교
+- [x] `docs/before_after_examples.md` 업데이트
 - [ ] (선택) **전략 3**: Hybrid Search — 전략 1·2로 충분하면 스킵
 
 ---
