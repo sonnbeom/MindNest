@@ -65,10 +65,11 @@ Claude API (LLM)
 - → 리팩토링 필요 (상세 전략: `mindnest-rag/docs/refactoring_strategy.md`)
 
 ### Phase 5 — 면접 소재 정리
-- [ ] 청킹 전략 선택 근거 문서화
-- [ ] VectorDB 선택 비교 정리
-- [ ] Before/After 예시 중 임팩트 큰 3개 추려서 발표용 준비
-- [ ] 리팩토링 적용 후 개선 전/후 비교 추가
+- [x] 청킹 전략 선택 근거 문서화
+- [x] VectorDB 선택 비교 정리
+- [x] Before/After 예시 중 임팩트 큰 3개 추려서 발표용 준비
+- [x] 리팩토링 적용 후 개선 전/후 비교 추가
+- 결과물: `mindnest-rag/docs/interview_prep.md`
 
 ### Phase 6 — 검색 품질 리팩토링 (신규)
 - [x] Step 1: 청크 표현 예시 20개로 확장 + ingest 재실행
