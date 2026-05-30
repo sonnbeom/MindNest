@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import StreamingText from "@/components/session/StreamingText";
 
 interface ThoughtSummaryStageProps {
@@ -7,6 +8,7 @@ interface ThoughtSummaryStageProps {
   selectedIndex: number;
   isAnimating: boolean;
   onSelect: (index: number) => void;
+  onAnimationDone?: () => void;
 }
 
 export default function ThoughtSummaryStage({
@@ -14,7 +16,20 @@ export default function ThoughtSummaryStage({
   selectedIndex,
   isAnimating,
   onSelect,
+  onAnimationDone,
 }: ThoughtSummaryStageProps) {
+  const [doneCount, setDoneCount] = useState(0);
+
+  useEffect(() => {
+    if (isAnimating) setDoneCount(0);
+  }, [isAnimating]);
+
+  useEffect(() => {
+    if (isAnimating && doneCount >= thoughts.length) {
+      onAnimationDone?.();
+    }
+  }, [doneCount, isAnimating, thoughts.length, onAnimationDone]);
+
   return (
     <div className="space-y-4">
       <div
@@ -59,7 +74,11 @@ export default function ThoughtSummaryStage({
               </div>
               <p className="text-sm leading-relaxed font-medium" style={{ color: "var(--text)" }}>
                 {isAnimating ? (
-                  <StreamingText text={thought} speed={35} />
+                  <StreamingText
+                    text={thought}
+                    speed={35}
+                    onComplete={() => setDoneCount((c) => c + 1)}
+                  />
                 ) : (
                   thought
                 )}
