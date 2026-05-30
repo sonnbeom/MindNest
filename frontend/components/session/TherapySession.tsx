@@ -195,6 +195,7 @@ export default function TherapySession() {
               selectedIndex={session.selectedThoughtIndex}
               isAnimating={isThoughtAnimating}
               onSelect={(i) => dispatch({ type: "SET_SELECTED_THOUGHT", payload: i })}
+              onAnimationDone={() => setIsThoughtAnimating(false)}
             />
           )}
 

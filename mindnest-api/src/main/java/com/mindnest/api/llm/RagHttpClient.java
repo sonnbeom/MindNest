@@ -1,16 +1,15 @@
 package com.mindnest.api.llm;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.mindnest.api.dto.request.ReframeGenerationRequest;
 import com.mindnest.api.exception.ErrorCode;
 import com.mindnest.api.exception.MindNestException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
-import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -29,6 +28,7 @@ public class RagHttpClient implements RagClient {
 
         AnalyzeResponse response = ragRestClient.post()
                 .uri("/rag/analyze")
+                .contentType(MediaType.APPLICATION_JSON)
                 .body(Map.of("intake_text", intakeText))
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, (req, res) -> {
@@ -50,6 +50,7 @@ public class RagHttpClient implements RagClient {
 
         ReframeResponse response = ragRestClient.post()
                 .uri("/rag/reframe")
+                .contentType(MediaType.APPLICATION_JSON)
                 .body(Map.of(
                         "selected_thought", request.selectedThought(),
                         "fact", request.fact(),
